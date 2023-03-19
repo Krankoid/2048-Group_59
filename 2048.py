@@ -1,4 +1,5 @@
 import random
+import math
 
 # makes an empty board and sets running to true to start the game loop
 board = [[0] * 4 for _ in range(4)]
@@ -68,82 +69,76 @@ def addRandomTile(board):
         row = random.randint(0, 3)
         col = random.randint(0, 3)
     board[row][col] = 2 if random.randint(1, 10) > 1 else 4
+    return board
 
 # move functions
 def left(board, score):
-    board_copy = [row[:] for row in board]
     board = pushLeft(board)
     board, score = merge(board, score)
     board = pushLeft(board)
-    isValid = board_copy != board and horizontal_move_possible(board)
-    addRandomTile(board)
+    # addRandomTile(board)
     # printBoard(board)
     
     #print(score)
     #isValid= horizontal_move_possible(board)
     #end_game(board)
-    return board, score, isValid
+    return board, score
 
 def right(board, score):
-    board_copy = [row[:] for row in board]
     board = reverseBoard(board)
     board = pushLeft(board)
     board, score = merge(board, score)
     board = pushLeft(board)
     board = reverseBoard(board)
-    isValid = board_copy != board
-    addRandomTile(board)
+    # addRandomTile(board)
     # printBoard(board)
     
     #print(score)
     #end_game(board)
-    return board, score, isValid
+    return board, score
 
 def up(board, score):
-    board_copy = [row[:] for row in board]
-
     board = transposeBoard(board)
     board = pushLeft(board)
     board, score = merge(board, score)
     board = pushLeft(board)
     board = transposeBoard(board)
-    isValid = board_copy != board 
  
     
-    addRandomTile(board)
+    # addRandomTile(board)
     # printBoard(board)  
     #print(score)
     #end_game(board)
-    return board, score, isValid
+    return board, score
 
 
 def down(board, score):
-    board_copy = [row[:] for row in board]
     board = transposeBoard(board)
     board = reverseBoard(board)
     board = pushLeft(board)
-    board, score = merge(mergeBoard, score)
-    board = pushLeft(mergeBoard)
+    board, score = merge(board, score)
+    board = pushLeft(board)
     board = reverseBoard(board)
     board = transposeBoard(board)
-    addRandomTile(board)
+    # addRandomTile(board)
     # printBoard(board)
-
+    
     #print(score)
     #end_game(board)
-    return board, score, isValid
+    return board, score
 
 def randomMove(board):
     moveMade = False
-    move_order = [right, up, down, left]
+    move_order = [down, left, up, right]
     while not moveMade and len(move_order) > 0:
         move_index = random.randint(0, len(move_order)-1)
         move = move_order[move_index]
         valid = validMove(board, move)
         if valid:
-            score += scoreChange
             return move, True
         move_order.pop(move_index)
+
+    print("no valid move found")
     return move_order[0], False
 
 def horizontal_move_possible(board):
@@ -169,49 +164,64 @@ def end_game(board):
         return True
     
 def validMove(board, move):
-    newBoard = board.copy()
-    newBoard, _, _ = move(board, 0)
+    newBoard, _ = move(board, 0)
 
     if board != newBoard:
         return True
     else:
         return False
 
+
 # ######## AI ##########
-def aiMove(board, searchesPerMove, searchLength, currentScore):
-    firstMoves = [down, left, up, right]
-    scores = [currentScore] * 4
+def aiMove(board, rSims, searchLength):
+    moves = [down, left, up, right]
+    scores = [0] * 4
+    nRan = [0] * 4
 
     for i in range(4):
-        firstMove = firstMoves[i]
-        firstBoard, firstScore, firstValid = firstMove(board, 0)
-
-        if firstValid:
-            firstBoard = addRandomTile(firstBoard)
-            scores[i] += firstScore
+        currentMove = moves[i]
+        if (validMove(board, currentMove)):
+            currentBoard, scores[i] = currentMove(board, 0)
+            currentBoard = addRandomTile(currentBoard)
         else:
             continue
-        for m in range(searchesPerMove):
+            
+        for simulation in range(rSims):
             mNr = 1
-            searchBoard = board.copy()
+            searchBoard = currentBoard.copy()
             valid = True
 
             while valid and mNr < searchLength:
-                
+
                 move, valid = randomMove(board)
+                
                 if valid:
-                    newBoard, scoreChange, _ = move(board, 0)
+                    newBoard, scores[i] = move(board, 0)
                     searchBoard = newBoard
-                    scores[i] += scoreChange
 
                     searchBoard = addRandomTile(searchBoard)
                     mNr +=1
+            
+            nRan[i] += mNr
+        
+        
 
-    bestMoveIndex = scores.index(max(scores))
-    bestMove = firstMoves[bestMoveIndex]
+                
+
+    nTotal = sum(nRan)
+    bestUCB = 0
+    foundMove = False
+    for i in range(4):
+        UCB = ( scores[i] / rSims ) + math.sqrt((2 * math.log(nTotal)) /  rSims)
+        if UCB > bestUCB and validMove(board, moves[i]):
+            foundMove = True
+            bestMove = moves[i]
+            bestUCB = UCB
+
     print("Best move found by AI: " + bestMove.__name__)
-    boardFinal, finalScore, validPos  = bestMove(board, currentScore)
-    return boardFinal, finalScore, validPos
+    return bestMove, foundMove
+    #boardFinal, finalScore  = bestMove(board, currentScore)
+    #return boardFinal, finalScore, (validMove(board, currentMove))
 
 ########### GAME LOGIC ###########
 
@@ -222,40 +232,53 @@ choice = input()
 initialize_game(board)
 printBoard(board)
 score = 0
+
+
 if choice == "p":
     while running:
         if end_game(board):
             break
+
         print()
         print("Enter a move: l, r, u, d")
         move = input()
         
+        
+        print("AI recommends:" )
+        aiMove(board, 20, 30)
+        
         match move:
             #make a move and store results
             case "l":
-                valid = validMove(board, left)
-                if (valid): 
-                    #make move here (left)
-                    newBoard, scoreChange, _ = left(board, score)
-                    board = newBoard
-                    score += scoreChange
-                else:
-                    print("not valid move")
-                    #not valid here
-            case "r":
-                valid, scoreChange = validMove(board, right)
-
-                newBoard,scoreChange, isValid = right(board, score)
-            case "u":
-                valid, scoreChange = validMove(board, up)
-
-                newBoard, scoreChange, isValid = up(board, score)
-            case "d":
-                valid, scoreChange = validMove(board, down)
+                move = left
                 
-                newBoard, scoreChange, isValid = down(board, score)
+            case "r":
+                move = right
+            
+            case "u":
+                move = up
+
+            case "d":
+                move = down
+
             case "quit":
                 running = False
+            
+            case default:
+                print("please enter a valid move")
+                continue
+        
+
+        valid = validMove(board, move)
+
+        if (valid): 
+            newBoard, score = move(board, score)
+            board = newBoard
+            board = addRandomTile(board)
+            printBoard(board)
+        else:
+            print("not valid move")
+            #not valid here
 
 
 if choice == "a":
@@ -264,15 +287,22 @@ if choice == "a":
             break
         print()
         
-        board, score, validPos = aiMove(board, 20, 30, score)
+        move, valid = aiMove(board, 100, 50)
 
-        printBoard(board)
-        print()
-        print("\nScore:"+ str(score))
-
-        if (not validPos): 
+        if not valid:
             running = False
             print("AI game over")
+        else:
+            newBoard, score = move(board, score)
+            board = newBoard
+            board = addRandomTile(board)
+
+
+            printBoard(board)
+            print()
+            print("\nScore:"+ str(score))
+
+        
             
         # match move:
         #     case "l":
