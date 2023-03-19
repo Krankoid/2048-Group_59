@@ -76,12 +76,7 @@ def left(board, score):
     board = pushLeft(board)
     board, score = merge(board, score)
     board = pushLeft(board)
-    # addRandomTile(board)
-    # printBoard(board)
-    
-    #print(score)
-    #isValid= horizontal_move_possible(board)
-    #end_game(board)
+
     return board, score
 
 def right(board, score):
@@ -90,11 +85,7 @@ def right(board, score):
     board, score = merge(board, score)
     board = pushLeft(board)
     board = reverseBoard(board)
-    # addRandomTile(board)
-    # printBoard(board)
-    
-    #print(score)
-    #end_game(board)
+
     return board, score
 
 def up(board, score):
@@ -105,10 +96,6 @@ def up(board, score):
     board = transposeBoard(board)
  
     
-    # addRandomTile(board)
-    # printBoard(board)  
-    #print(score)
-    #end_game(board)
     return board, score
 
 
@@ -120,11 +107,7 @@ def down(board, score):
     board = pushLeft(board)
     board = reverseBoard(board)
     board = transposeBoard(board)
-    # addRandomTile(board)
-    # printBoard(board)
-    
-    #print(score)
-    #end_game(board)
+
     return board, score
 
 def randomMove(board):
@@ -137,31 +120,7 @@ def randomMove(board):
         if valid:
             return move, True
         move_order.pop(move_index)
-
-    print("no valid move found")
-    return move_order[0], False
-
-def horizontal_move_possible(board):
-    for i in range(4):
-        for j in range(3):
-            if board[i][j] != 0 and board[i][j] == board[i][j+1]:
-                return True
-    return False
-
-def vertical_move_possible(board):
-    for i in range(3):
-        for j in range(4):
-            if board[i][j] != 0 and board[i][j] == board[i+1][j]:
-                return True
-    return False
-
-def end_game(board):
-    if any(2048 in row for row in board):
-        print("You win!")
-        return True
-    elif not any (0 in row for row in board) and not horizontal_move_possible(board) and not vertical_move_possible(board):
-        print("You lose!")
-        return True
+    return None, False
     
 def validMove(board, move):
     newBoard, _ = move(board, 0)
@@ -193,11 +152,10 @@ def aiMove(board, rSims, searchLength):
 
             while valid and mNr < searchLength:
 
-                move, valid = randomMove(board)
+                move, valid = randomMove(searchBoard)
                 
                 if valid:
-                    newBoard, scores[i] = move(board, 0)
-                    searchBoard = newBoard
+                    searchBoard, scores[i] = move(searchBoard, scores[i])
 
                     searchBoard = addRandomTile(searchBoard)
                     mNr +=1
@@ -211,15 +169,17 @@ def aiMove(board, rSims, searchLength):
     nTotal = sum(nRan)
     bestUCB = 0
     foundMove = False
+    bestMove = None
     for i in range(4):
         UCB = ( scores[i] / rSims ) + math.sqrt((2 * math.log(nTotal)) /  rSims)
-        if UCB > bestUCB and validMove(board, moves[i]):
+        if UCB >= bestUCB and validMove(board, moves[i]):
             foundMove = True
             bestMove = moves[i]
             bestUCB = UCB
 
     print("Best move found by AI: " + bestMove.__name__)
     return bestMove, foundMove
+    
     #boardFinal, finalScore  = bestMove(board, currentScore)
     #return boardFinal, finalScore, (validMove(board, currentMove))
 
@@ -236,8 +196,6 @@ score = 0
 
 if choice == "p":
     while running:
-        if end_game(board):
-            break
 
         print()
         print("Enter a move: l, r, u, d")
@@ -273,9 +231,13 @@ if choice == "p":
 
         if (valid): 
             newBoard, score = move(board, score)
+            newBoard = addRandomTile(newBoard)
             board = newBoard
-            board = addRandomTile(board)
             printBoard(board)
+
+            if 2048 in board:
+                print("you win!")
+                running = False
         else:
             print("not valid move")
             #not valid here
@@ -283,11 +245,9 @@ if choice == "p":
 
 if choice == "a":
     while running:
-        if end_game(board):
-            break
         print()
         
-        move, valid = aiMove(board, 100, 50)
+        move, valid = aiMove(board, 50, 50)
 
         if not valid:
             running = False
@@ -301,6 +261,9 @@ if choice == "a":
             printBoard(board)
             print()
             print("\nScore:"+ str(score))
+            if 2048 in board:
+                print("you win!")
+                running = False
 
         
             
