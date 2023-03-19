@@ -40,7 +40,7 @@ def aiMove(board, rSims, searchLength):
     # calculates the UCB of each branch
     bestUCB = 0
     foundMove = False
-    bestMove = None
+    bestMove = Game.down
     for i in range(4):
         if Game.validMove(board, moves[i]):
             UCB = ( scores[i] / rSims ) + sqrt((2 * log(totalRan)) /  rSims)

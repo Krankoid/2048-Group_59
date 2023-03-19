@@ -62,7 +62,8 @@ if choice == "p":
 
 if choice == "a":
     while running:
-        move, valid = AI.aiMove(board, 50, 50)
+        # calls the AI to find the best possible move
+        move, valid = AI.aiMove(board, 30, 50)
 
         # checks if the AI found a valid move in the board
         if not valid:
