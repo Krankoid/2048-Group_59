@@ -16,11 +16,12 @@ def aiMove(board, rSims, searchLength):
         if (Game.validMove(board, currentMove)):
             currentBoard, scores[i] = currentMove(board, 0)
             currentBoard = Game.addRandomTile(currentBoard)
+            totalRan += 1
         else:
             continue
         # loops however many times specifies to run simluations
         for simulation in range(rSims):
-
+            
             mNr = 1
             searchBoard = currentBoard.copy()
             valid = True
@@ -35,12 +36,12 @@ def aiMove(board, rSims, searchLength):
                     searchBoard = Game.addRandomTile(searchBoard)
 
                     mNr +=1
-            totalRan += mNr
         
     # calculates the UCB of each branch
     bestUCB = 0
     foundMove = False
     bestMove = Game.down
+    totalRan *= rSims
     for i in range(4):
         if Game.validMove(board, moves[i]):
             UCB = ( scores[i] / rSims ) + sqrt((2 * log(totalRan)) /  rSims)
