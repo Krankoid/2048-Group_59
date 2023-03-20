@@ -61,16 +61,9 @@ if choice == "p":
 
 
 if choice == "a":
-    print("How many games do you want to run? ")
-    simNum = int(input())
-
-    print("How deep should the games run? ")
-    simLength = int(input())
-
-
     while running:
         # calls the AI to find the best possible move
-        move, valid = AI.aiMove(board, simNum, simLength)
+        move, valid = AI.aiMove(board, 100, 40)
 
         # checks if the AI found a valid move in the board
         if not valid:
